@@ -3,8 +3,6 @@ networks:
     driver: bridge
   app-network:
     driver: bridge
-  logs-service-network:
-    driver: bridge
 
 services:
   users-service-database:
@@ -51,7 +49,7 @@ services:
         condition: service_healthy
     restart: on-failure
     networks:
-      - logs-service-network
+      - users-service-network
       - app-network
 
   users-cli:
