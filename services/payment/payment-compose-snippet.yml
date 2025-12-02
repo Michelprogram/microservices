@@ -1,0 +1,7 @@
+payment-service:
+  build: ./services/payment
+  container_name: payment-service
+  ports:
+    - "8004:8004"
+  volumes:
+    - payment-data:/data
