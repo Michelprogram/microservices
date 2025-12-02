@@ -3,6 +3,8 @@ networks:
     driver: bridge
   app-network:
     driver: bridge
+  logs-service-network:
+    driver: bridge
 
 services:
   users-service-database:
@@ -51,3 +53,17 @@ services:
     networks:
       - logs-service-network
       - app-network
+
+  users-cli:
+    build:
+      context: ./cli
+      dockerfile: Dockerfile
+    container_name: users-service-cli
+    environment:
+    - USERS_SERVICE_URL=http://users-service:3000
+    networks:
+    - app-network
+    stdin_open: true
+    tty: true
+ 
+    
