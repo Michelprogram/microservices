@@ -3,15 +3,17 @@ package server
 import (
 	"net/http"
 	"rides/internal/database"
+	"rides/internal/services"
 )
 
 type Server struct {
-	db              *database.Database
-	usersServiceURL string
+	db             *database.Database
+	userService    *services.UserService
+	paymentService *services.PaymentService
 }
 
-func NewServer(db *database.Database, usersServiceURL string) *Server {
-	return &Server{db: db, usersServiceURL: usersServiceURL}
+func NewServer(db *database.Database, userService *services.UserService, paymentService *services.PaymentService) *Server {
+	return &Server{db: db, userService: userService, paymentService: paymentService}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

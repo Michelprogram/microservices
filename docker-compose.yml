@@ -5,6 +5,8 @@ networks:
     driver: bridge
   app-network:
     driver: bridge
+  payment-service-network:
+    driver: bridge
 
 services:
   users-service-database:
@@ -112,10 +114,57 @@ services:
         condition: service_healthy
       users-service:
         condition: service_started
+      payment-service:
+        condition: service_started
     environment:
       - MONGO_URI=mongodb://user_app:strong_app_password@rides-service-database:27017/user_db?authSource=ridenow_rides
       - USERS_SERVICE_URL=http://users-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:8004
     restart: on-failure
     networks:
       - rides-service-network
+      - app-network
+
+  payment-service-database:
+    container_name: payment-service-database
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ridenow_payments
+      - POSTGRES_USER=payment_user
+      - POSTGRES_PASSWORD=payment_password
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+      - ./services/payment/init-payment.sql:/docker-entrypoint-initdb.d/init-payment.sql:ro
+    networks:
+      - payment-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d ridenow_payments"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  payment-service:
+    container_name: payment-service
+    ports:
+      - "8004:8004"
+    build:
+      context: ./services/payment
+      dockerfile: dockerfile
+    depends_on:
+      payment-service-database:
+        condition: service_healthy
+    environment:
+      - PORT=8004
+      - DB_HOST=payment-service-database
+      - DB_PORT=5432
+      - DB_NAME=ridenow_payments
+      - DB_USER=payment_user
+      - DB_PASSWORD=payment_password
+    restart: on-failure
+    networks:
+      - payment-service-network
       - app-network

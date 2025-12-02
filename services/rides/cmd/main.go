@@ -7,6 +7,7 @@ import (
 	"os"
 	"rides/internal/database"
 	"rides/internal/server"
+	"rides/internal/services"
 )
 
 func main() {
@@ -17,9 +18,14 @@ func main() {
 	}
 
 	usersServiceURL := getEnv("USERS_SERVICE_URL", "http://localhost:3000")
+	userService := services.NewUserService(usersServiceURL)
+
+	paymentServiceURL := getEnv("PAYMENT_SERVICE_URL", "http://localhost:8004")
+	paymentService := services.NewPaymentService(paymentServiceURL)
+
 	port := fmt.Sprintf(":%s", getEnv("PORT", "8080"))
 
-	s := server.NewServer(db, usersServiceURL)
+	s := server.NewServer(db, userService, paymentService)
 
 	log.Printf("🚀 Service Rides démarré sur le port %s", port)
 	if err := http.ListenAndServe(port, s); err != nil {

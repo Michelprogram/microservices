@@ -3,13 +3,10 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"math/rand"
 	"net/http"
 	"rides/internal/types"
-	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,15 +31,25 @@ func (s *Server) createRide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	price := getPrice(req.FromZone, req.ToZone)
-	driverID, err := s.getAvailableDriver()
+	driverID, err := s.userService.GetAvailableDriver()
 	if err != nil {
 		log.Printf("[ERROR] Failed to get available driver: %v", err)
 		http.Error(w, "No available driver found", http.StatusServiceUnavailable)
 		return
 	}
 
+	rideID := primitive.NewObjectID()
+
+	paymentID, err := s.paymentService.AuthorizePayment(rideID.Hex(), price)
+	if err != nil {
+		log.Printf("[WARN] Failed to authorize payment: %v", err)
+		http.Error(w, "Failed to authorize payment", http.StatusInternalServerError)
+	}
+
 	ride := &types.Ride{
+		ID:            rideID,
 		PassengerID:   req.PassengerID,
+		PaymentID:     paymentID,
 		DriverID:      driverID,
 		FromZone:      req.FromZone,
 		ToZone:        req.ToZone,
@@ -63,7 +70,7 @@ func (s *Server) createRide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.updateDriverStatus(driverID, false); err != nil {
+	if err := s.userService.UpdateDriverStatus(driverID, false); err != nil {
 		log.Printf("[WARN] Failed to update driver status: %v", err)
 	}
 
@@ -131,15 +138,19 @@ func (s *Server) updateRideStatus(w http.ResponseWriter, r *http.Request) {
 	// If status is COMPLETED, capture payment
 	if req.Status == "COMPLETED" {
 		ride, err := s.db.GetRideByID(ctx, id)
-		if err == nil {
-			paymentStatus := capturePayment(ride.ID.Hex(), ride.Price)
-			err = s.db.UpdateRidePaymentStatus(ctx, id, paymentStatus)
+		if err == nil && ride.PaymentID != "" {
+			err = s.paymentService.CapturePayment(ride.PaymentID)
 			if err != nil {
-				log.Printf("[ERROR] Failed to update payment status: %v", err)
+				log.Printf("[ERROR] Failed to capture payment: %v", err)
+			} else {
+				err = s.db.UpdateRidePaymentStatus(ctx, id, "CAPTURED")
+				if err != nil {
+					log.Printf("[ERROR] Failed to update payment status: %v", err)
+				}
 			}
 		}
 
-		if err := s.updateDriverStatus(ride.DriverID, true); err != nil {
+		if err := s.userService.UpdateDriverStatus(ride.DriverID, true); err != nil {
 			log.Printf("[WARN] Failed to update driver status: %v", err)
 		}
 	}
@@ -160,90 +171,4 @@ func (s *Server) updateRideStatus(w http.ResponseWriter, r *http.Request) {
 
 func getPrice(from, to string) float64 {
 	return float64(rand.Intn(50) + 10)
-}
-
-func (s *Server) getAvailableDriver() (string, error) {
-	url := fmt.Sprintf("%s/drivers?available=true", s.usersServiceURL)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
-	}
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to call users service: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("users service returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var drivers []struct {
-		ID          string `json:"id"`
-		Name        string `json:"name"`
-		IsAvailable bool   `json:"is_available"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&drivers); err != nil {
-		return "", fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if len(drivers) == 0 {
-		return "", fmt.Errorf("no available drivers found")
-	}
-
-	// Return the first available driver's ID
-	return drivers[0].ID, nil
-}
-
-func (s *Server) updateDriverStatus(driverID string, isAvailable bool) error {
-	url := fmt.Sprintf("%s/drivers/%s/status", s.usersServiceURL, driverID)
-
-	payload := struct {
-		IsAvailable bool `json:"is_available"`
-	}{
-		IsAvailable: isAvailable,
-	}
-
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "PATCH", url, strings.NewReader(string(jsonData)))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to call users service: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("users service returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	log.Printf("[UPDATE] Driver %s availability set to %v", driverID, isAvailable)
-	return nil
-}
-
-func capturePayment(rideID string, amount float64) string {
-	log.Printf("Payment captured for ride %s: %.2f\n", rideID, amount)
-	return "CAPTURED"
 }

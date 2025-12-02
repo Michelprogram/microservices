@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 	"log"
-	"time"
 	"rides/internal/types"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +13,7 @@ import (
 )
 
 type Database struct {
-	client         *mongo.Client
+	client          *mongo.Client
 	ridesCollection *mongo.Collection
 }
 
@@ -94,4 +94,3 @@ func (db *Database) UpdateRide(ctx context.Context, id primitive.ObjectID, ride 
 	)
 	return err
 }
-

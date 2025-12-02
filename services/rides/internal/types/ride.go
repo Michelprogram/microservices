@@ -9,6 +9,7 @@ import (
 type Ride struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	PassengerID   string             `bson:"passenger_id" json:"passengerId"`
+	PaymentID     string             `bson:"payment_id,omitempty" json:"paymentId,omitempty"`
 	DriverID      string             `bson:"driver_id" json:"driverId"`
 	FromZone      string             `bson:"from_zone" json:"from_zone"`
 	ToZone        string             `bson:"to_zone" json:"to_zone"`
@@ -18,4 +19,3 @@ type Ride struct {
 	CreatedAt     time.Time          `bson:"created_at" json:"createdAt"`
 	UpdatedAt     time.Time          `bson:"updated_at" json:"updatedAt"`
 }
-
