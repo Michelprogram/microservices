@@ -1,0 +1,7 @@
+  pricing-service:
+    container_name: pricing-service
+    build: ./pricing-service
+    ports:
+      - "4000:4000"
+    networks:
+      - ridenow
