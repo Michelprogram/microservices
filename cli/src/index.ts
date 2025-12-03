@@ -65,7 +65,7 @@ const displayIntro = () => {
 
 const setupDriverCommands = (program: Command) => {
   const driverCommand = program.command('drivers');
-  
+
   driverCommand
     .command('create')
     .description('Create a new driver')
@@ -99,7 +99,7 @@ const setupDriverCommands = (program: Command) => {
       try {
         const params = options.available ? { available: true } : {};
         const response = await usersApi.get('/drivers', { params });
-        
+
         console.log('Drivers:');
         console.log(JSON.stringify(response.data, null, 2));
       } catch (error) {
@@ -150,7 +150,7 @@ const setupDriverCommands = (program: Command) => {
 
 const setupPassengerCommands = (program: Command) => {
   const passengerCommand = program.command('passengers');
-  
+
   passengerCommand
     .command('create')
     .description('Create a new passenger')
@@ -182,7 +182,7 @@ const setupPassengerCommands = (program: Command) => {
     .action(async () => {
       try {
         const response = await usersApi.get('/passengers');
-        
+
         console.log('Passengers:');
         console.log(JSON.stringify(response.data, null, 2));
       } catch (error) {
@@ -298,7 +298,7 @@ const setupPassengerCommands = (program: Command) => {
 
 const setupRideCommands = (program: Command) => {
   const rideCommand = program.command('rides');
-  
+
   rideCommand
     .command('create')
     .description('Create a new ride (reserve a ride)')
@@ -327,12 +327,20 @@ const setupRideCommands = (program: Command) => {
             type: 'input',
             name: 'from_zone',
             message: 'Enter pickup zone:',
+            choices: ["Centre-ville", "Aéroport", "Plateau", "McGill"].map(zone => ({
+              name: zone,
+              value: zone
+            })),
             validate: (input) => input.trim() ? true : 'Pickup zone is required'
           },
           {
             type: 'input',
             name: 'to_zone',
             message: 'Enter destination zone:',
+            choices: ["Centre-ville", "Aéroport", "Plateau", "McGill"].map(zone => ({
+              name: zone,
+              value: zone
+            })),
             validate: (input) => input.trim() ? true : 'Destination zone is required'
           }
         ]);
@@ -345,7 +353,7 @@ const setupRideCommands = (program: Command) => {
 
         console.log('Ride created successfully:');
         console.log(JSON.stringify(response.data, null, 2));
-        
+
         const ride: Ride = response.data;
         console.log(`\nSummary:`);
         console.log(`- Passenger: ${answers.passengerId}`);
@@ -401,12 +409,12 @@ const setupRideCommands = (program: Command) => {
       try {
         const params = options.status ? { status: options.status } : {};
         const response = await ridesApi.get('/rides', { params });
-        
+
         if (response.data.length === 0) {
           console.log('No rides found.');
           return;
         }
-        
+
         console.log('Rides:');
         response.data.forEach((ride: Ride) => {
           console.log(`\nID: ${ride.id}`);
@@ -467,11 +475,11 @@ const setupRideCommands = (program: Command) => {
 
         console.log('Ride status updated successfully:');
         console.log(JSON.stringify(response.data, null, 2));
-        
+
         const ride: Ride = response.data;
         console.log(`\nUpdated Status: ${ride.status}`);
         console.log(`Payment Status: ${ride.paymentStatus}`);
-        
+
         if (ride.status === 'COMPLETED') {
           console.log('\nNote: The ride has been marked as completed.');
           console.log('- Payment has been automatically captured');
@@ -520,7 +528,7 @@ const setupRideCommands = (program: Command) => {
         console.log(`Payment Status: ${ride.paymentStatus}`);
         console.log(`Created: ${new Date(ride.createdAt).toLocaleString()}`);
         console.log(`Last Updated: ${new Date(ride.updatedAt).toLocaleString()}`);
-        
+
         // Get driver details
         try {
           const driverResponse = await usersApi.get(`/drivers/${ride.driverId}`);
