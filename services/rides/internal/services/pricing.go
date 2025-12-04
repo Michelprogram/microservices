@@ -10,9 +10,9 @@ import (
 )
 
 type priceRequest struct {
-	from string "json:'from'"
-	to   string "json:'to'"
-	price float64 "json:'price'"
+	From  string  `json:"from"`
+	To    string  `json:"to"`
+	Price float64 `json:"price"`
 }
 
 type PricingService struct {
@@ -44,13 +44,13 @@ func (ps *PricingService) GetPrice(fromZone, toZone string) (float64, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("failed to call users service: %w", err)
+		return 0, fmt.Errorf("failed to call pricing service: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return 0, fmt.Errorf("users service returned status %d: %s", resp.StatusCode, string(body))
+		return 0, fmt.Errorf("pricing service returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var res priceRequest
@@ -59,6 +59,6 @@ func (ps *PricingService) GetPrice(fromZone, toZone string) (float64, error) {
 		return 0, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return res.price, nil
+	return res.Price, nil
 
 }

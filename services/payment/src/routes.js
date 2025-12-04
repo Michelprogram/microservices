@@ -8,6 +8,8 @@ router.post("/authorize", async (req, res) => {
   try {
     const { ride_id, amount } = req.body;
 
+    console.log("[PAYMENT] Authorizing payment for ride:", ride_id, "amount:", amount);
+
     if (!ride_id || !amount || Number(amount) <= 0) {
       return res.status(400).json({ error: "Invalid ride_id or amount" });
     }

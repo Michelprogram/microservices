@@ -138,7 +138,6 @@ services:
       - POSTGRES_USER=payment_user
       - POSTGRES_PASSWORD=payment_password
     volumes:
-      - payment-db-data:/var/lib/postgresql/data
       - ./services/payment/init-payment.sql:/docker-entrypoint-initdb.d/init-payment.sql:ro
     networks:
       - payment-service-network

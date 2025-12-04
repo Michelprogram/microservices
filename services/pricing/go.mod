@@ -1,4 +1,4 @@
-module pricing-service
+module services/pricing
 
 go 1.20
 

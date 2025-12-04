@@ -3,7 +3,18 @@ package main
 import (
 	"log"
 	"net/http"
+	"services/pricing/internal"
+
+	"github.com/gorilla/mux"
 )
+
+func SetupRouter() *mux.Router {
+	r := mux.NewRouter()
+
+	r.HandleFunc("/price", internal.GetPriceHandler).Methods("GET")
+
+	return r
+}
 
 func main() {
 	router := SetupRouter()

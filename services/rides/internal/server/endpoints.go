@@ -37,7 +37,6 @@ func (s *Server) createRide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	driverID, err := s.userService.GetAvailableDriver()
 	if err != nil {
 		log.Printf("[ERROR] Failed to get available driver: %v", err)
@@ -51,6 +50,7 @@ func (s *Server) createRide(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[WARN] Failed to authorize payment: %v", err)
 		http.Error(w, "Failed to authorize payment", http.StatusInternalServerError)
+		return
 	}
 
 	ride := &types.Ride{
