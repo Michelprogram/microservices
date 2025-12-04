@@ -58,11 +58,11 @@ services:
       - users-service-network
       - app-network
 
-  users-cli:
+  cli:
     build:
       context: ./cli
       dockerfile: Dockerfile
-    container_name: users-service-cli
+    container_name: cli
     environment:
       - RIDES_BASE_URL=http://rides-service:8080
       - USERS_SERVICE_URL=http://users-service:3000
@@ -121,6 +121,7 @@ services:
       - MONGO_URI=mongodb://user_app:strong_app_password@rides-service-database:27017/user_db?authSource=ridenow_rides
       - USERS_SERVICE_URL=http://users-service:3000
       - PAYMENT_SERVICE_URL=http://payment-service:8004
+      - PRICING_SERVICE_URL=http://pricing-service:4000
     restart: on-failure
     networks:
       - rides-service-network
@@ -168,4 +169,15 @@ services:
     restart: on-failure
     networks:
       - payment-service-network
+      - app-network
+
+  pricing-service:
+    container_name: pricing-service
+    ports:
+      - "4000:4000"
+    build:
+      context: ./services/pricing
+      dockerfile: Dockerfile
+    restart: on-failure
+    networks:
       - app-network

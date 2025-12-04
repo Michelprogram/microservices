@@ -10,10 +10,11 @@ type Server struct {
 	db             *database.Database
 	userService    *services.UserService
 	paymentService *services.PaymentService
+	pricingService *services.PricingService
 }
 
-func NewServer(db *database.Database, userService *services.UserService, paymentService *services.PaymentService) *Server {
-	return &Server{db: db, userService: userService, paymentService: paymentService}
+func NewServer(db *database.Database, userService *services.UserService, paymentService *services.PaymentService, pricingService *services.PricingService) *Server {
+	return &Server{db: db, userService: userService, paymentService: paymentService, pricingService: pricingService}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

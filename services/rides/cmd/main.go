@@ -23,9 +23,12 @@ func main() {
 	paymentServiceURL := getEnv("PAYMENT_SERVICE_URL", "http://localhost:8004")
 	paymentService := services.NewPaymentService(paymentServiceURL)
 
+	pricingServiceURL := getEnv("PRICING_SERVICE_URL", "http://localhost:8002")
+	pricingService := services.NewPricingService(pricingServiceURL)
+
 	port := fmt.Sprintf(":%s", getEnv("PORT", "8080"))
 
-	s := server.NewServer(db, userService, paymentService)
+	s := server.NewServer(db, userService, paymentService, pricingService)
 
 	log.Printf("🚀 Service Rides démarré sur le port %s", port)
 	if err := http.ListenAndServe(port, s); err != nil {

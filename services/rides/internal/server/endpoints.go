@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"math/rand"
 	"net/http"
 	"rides/internal/types"
 	"time"
@@ -30,7 +29,15 @@ func (s *Server) createRide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	price := getPrice(req.FromZone, req.ToZone)
+	price, err := s.pricingService.GetPrice(req.FromZone, req.ToZone)
+
+	if err != nil {
+		log.Printf("[WARN] Failed to get price: %v", err)
+		http.Error(w, "Failed to get price", http.StatusInternalServerError)
+		return
+	}
+
+
 	driverID, err := s.userService.GetAvailableDriver()
 	if err != nil {
 		log.Printf("[ERROR] Failed to get available driver: %v", err)
@@ -167,8 +174,4 @@ func (s *Server) updateRideStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ride)
-}
-
-func getPrice(from, to string) float64 {
-	return float64(rand.Intn(50) + 10)
 }
